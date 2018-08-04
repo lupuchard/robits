@@ -4,7 +4,6 @@
 #include <limits>
 #include <cstring>
 #include <algorithm>
-#include <iostream>
 
 struct CompareCell : public std::binary_function<std::pair<Pos, PathFinder::Node*>, std::pair<Pos, PathFinder::Node*>, bool> {
 	bool operator()(const std::pair<Pos, PathFinder::Node*>& lhs, const std::pair<Pos, PathFinder::Node*>& rhs) const {
@@ -32,9 +31,8 @@ unsigned short get_h(Pos diff) {
 }
 
 bool PathFinder::go(Pos from, Dir dir, Pos& dest) {
-	Cell& cell = region.get_cell(from);
 	dest = Pos::from_dir(dir) + from;
-	if (cell.form == Form::Ramp && region.is_walkable(dest + Pos(0, 0, 1))) {
+	if (region.form(dest) == Form::Ramp && region.is_walkable(dest + Pos(0, 0, 1))) {
 		dest += Pos(0, 0, 1);
 	} else if (!region.is_walkable(dest)) {
 		if (region.get_cell(dest - Pos(0, 0, 1)).form == Form::Ramp) {
@@ -59,10 +57,9 @@ std::vector<Pos> PathFinder::create_path(Pos start, Pos goal) {
 	start_node.h = get_h(goal - start);
 	open.push(std::make_pair(start, &start_node));
 
-	bool done = false;
 	bool success = false;
 	int iterations = 0;
-	while (!done) {
+	while (true) {
 		if (open.empty() || iterations > 10000) {
 			break;
 		}
@@ -73,20 +70,18 @@ std::vector<Pos> PathFinder::create_path(Pos start, Pos goal) {
 		current_node.path_status = DONE;
 		iterations++;
 
+		Pos gdiff = (goal - current).abs();
+		if (gdiff.x <= 1 && gdiff.y <= 1 && gdiff .z <= 1) {
+			Node& goal_node = at(goal);
+			goal_node.prev = pos_to_dir(gdiff);
+			goal_node.prev_z = (int8_t)(goal.z - current.z);
+			success = true;
+			break;
+		}
+
 		for (int i = 1; i < Dir::Count; i++) {
 			Pos dest;
-			bool went = go(current, (Dir)i, dest);
-
-			if ((went && dest == goal) || current + Pos::from_dir((Dir)i) == goal) {
-				Node& goal_node = at(goal);
-				goal_node.prev = (Dir)i;
-				goal_node.prev_z = (int8_t)(goal.z - current.z);
-				done = true;
-				success = true;
-				break;
-			}
-
-			if (!went) continue;
+			if (!go(current, (Dir)i, dest)) continue;
 
 			Node& dest_node = at(dest);
 			if (dest_node.path_status == DONE) {
@@ -111,8 +106,6 @@ std::vector<Pos> PathFinder::create_path(Pos start, Pos goal) {
 			}
 		}
 	}
-
-	std::cout << iterations << std::endl;
 
 	std::vector<Pos> path;
 	if (success) {

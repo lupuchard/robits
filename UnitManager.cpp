@@ -46,7 +46,7 @@ void UnitManager::do_build(Unit& unit) {
 
 	Pos diff = build_job.site - unit.pos;
 	if (diff.z == 0 && std::abs(diff.x) <= 1 && std::abs(diff.y) <= 1) {
-		Cell& cell = region.get_cell(build_job.site);
+		Cell cell = region.get_cell(build_job.site);
 		cell.form = build_job.form;
 		cell.substance = build_job.substance;
 		unit.state = Unit::IDLE;

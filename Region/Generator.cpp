@@ -33,9 +33,9 @@ void Generator::generate(Region& region) {
 				if (z <= heights[x + y * region.dim().x] || x == 0 || y == 0 || z == 0 ||
 				    x == region.dim().x - 1 || y == region.dim().y - 1 || z == region.dim().z - 1) {
 
-					Cell& cell = region.get_cell(Pos(x, y, z));
-					cell.form = Form::Fill;
-					cell.substance = 1;
+					int idx = region.idx(Pos(x, y, z));
+					region.form(idx) = Form::Fill;
+					region.substance(idx) = 1;
 				}
 			}
 		}
@@ -50,11 +50,10 @@ void Generator::generate(Region& region) {
 	for (int z = 1; z < region.dim().z - 1; z++) {
 		for (int y = 1; y < region.dim().y - 1; y++) {
 			for (int x = 1; x < region.dim().x - 1; x++) {
-				Cell& cell = region.get_cell(Pos(x, y, z));
-				bool rampable = cell.form == Form::Fill &&
-				                region.get_cell(Pos(x, y, z + 1)).form != Form::Fill &&
-				                ramp_noise.GetValue(x, y, z) < 0;
+				Form& form = region.form(Pos(x, y, z));
 
+				bool rampable = form == Form::Fill && region.form(Pos(x, y, z + 1)) != Form::Fill &&
+				                ramp_noise.GetValue(x, y, z) < 0;
 				if (!rampable) continue;
 
 				for (int x0 = -1; x0 <= 1; x0++) {
@@ -64,10 +63,10 @@ void Generator::generate(Region& region) {
 						int x1 = x0 + x;
 						int y1 = y0 + y;
 
-						if (region.get_cell(Pos(x1, y1, z)).form == Form::None &&
-						    region.get_cell(Pos(x1, y1, z - 1)).form != Form::None) {
+						if (region.form(Pos(x1, y1, z)) == Form::None &&
+						    region.form(Pos(x1, y1, z - 1)) != Form::None) {
 
-							cell.form = Form::Ramp;
+							form = Form::Ramp;
 							goto exit_doubleloop;
 						}
 					}
@@ -81,13 +80,13 @@ exit_doubleloop:;
 	for (int z = 1; z < region.dim().z - 1; z++) {
 		for (int y = 1; y < region.dim().y - 1; y++) {
 			for (int x = 1; x < region.dim().x - 1; x++) {
-				Cell& cell = region.get_cell(Pos(x, y, z));
+				bool& visible = region.visible(Pos(x, y, z));
 
 				for (int x0 = -1; x0 <= 1; x0++) {
 					for (int y0 = -1; y0 <= 1; y0++) {
 						if (x0 == 0 && y0 == 0) continue;
 						if (region.get_cell(Pos(x0 + x, y0 + y, z)).form == Form::None) {
-							cell.visible = true;
+							visible = true;
 							goto exit_doubleloop2;
 						}
 					}

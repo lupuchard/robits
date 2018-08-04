@@ -169,33 +169,35 @@ void Renderer::update_ground() {
 			uint64_t rand = rando.rand();
 			for (int z = z_level; z >= 1; z--, depth++) {
 				Pos pos(x, y, z);
-				Cell& precell = region.get_cell(pos);
+				Form& preform = region.form(pos);
 				if (!region.is_walkable(pos)) {
-					bool wall = precell.form == Form::Fill || precell.form == Form::Wall;
-					if (!(wall && depth == 1 && precell.visible)) {
+					bool wall = preform == Form::Fill || preform == Form::Wall;
+					if (!(wall && depth == 1 && region.visible(pos))) {
 						continue;
 					}
 					depth--;
 				}
 
 				ground_heights[x + y * region.dim().x] = (int16_t)z;
-				if (precell.form == Form::None) {
+				if (preform == Form::None) {
 					pos.z--;
 				}
-				Cell& cell = region.get_cell(pos);
+				int idx = region.idx(pos);
+				Form form = region.form(idx);
+				uint16_t substance = region.substance(idx);
 
 				sf::Color color;
-				if (cell.form == Form::Ramp) {
-					color = darken(substance_color(cell.substance), depth - 1);
+				if (form == Form::Ramp) {
+					color = darken(substance_color(substance), depth - 1);
 					color = darken(color, 1, SQRT_DEPTH_FACTOR);
-				} else if (cell.form == Form::Floor) {
-					color = darken(substance_color(cell.substance), depth - 1);
+				} else if (form == Form::Floor) {
+					color = darken(substance_color(substance), depth - 1);
 				} else {
-					color = darken(substance_color(cell.substance), depth);
+					color = darken(substance_color(substance), depth);
 				}
 
 				sf::Vector2f tc(0, 0);
-				if (cell.form == Form::Fill) {
+				if (form == Form::Fill) {
 					union {
 						uint64_t rand;
 						uint16_t r[4];
@@ -214,7 +216,7 @@ void Renderer::update_ground() {
 					color.g = (uint8_t)clamp(color.g + (int)u.r[2] % 3 - 1, 0, 255);
 					color.b = (uint8_t)clamp(color.b + (int)u.r[3] % 3 - 1, 0, 255);
 
-				} else if (cell.form == Form::Wall) {
+				} else if (form == Form::Wall) {
 					const unsigned int N = 1;
 					const unsigned int S = 2;
 					const unsigned int E = 4;

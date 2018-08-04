@@ -56,6 +56,16 @@ struct Pos {
 	int16_t x, y, z;
 };
 
+inline Dir pos_to_dir(Pos pos) {
+	if (pos.x < 0) {
+		return pos.y < 0 ? SOUTH_WEST : pos.y == 0 ? WEST : NORTH_WEST;
+	} else if (pos.x == 0) {
+		return pos.y < 0 ? SOUTH      : pos.y == 0 ? NONE : NORTH;
+	} else {
+		return pos.y < 0 ? SOUTH_EAST : pos.y == 0 ? EAST : NORTH_EAST;
+	}
+}
+
 inline Pos operator+(Pos lhs, const Pos& rhs) {
 	lhs += rhs;
 	return lhs;
